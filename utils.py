@@ -24,6 +24,7 @@ def dichotomy(func, x0, step0=1, delta=1e-5):
     xp = xp+s*step
     return xp
 
+
 # TENSOR MODEL
 
 # Stieltjes transform
@@ -82,21 +83,12 @@ def model(p, n, m, mu_norm, h_norm, y):
     W = np.random.randn(p, n, m)/np.sqrt(p+n+m)
     return np.einsum('ij,k->ijk', np.einsum('i,j->ij', mu, y/np.sqrt(n))+Z, h)+W
 
-def unfolding_clustering(X):
-    X2 = unfold(X, 1)
-    return eigsh(X2@X2.T, k=1)[1][:, 0]
-
 def tensor_clustering(X):
     return parafac(X, 1, normalize_factors=True)[1][1][:, 0]
 
-def unfolding_accuracy(p, n, m, mu_norm, h_norm):
-    s = p+n+m
-    rho, mu2 = np.meshgrid(h_norm**2*s/np.sqrt(p*n*m), mu_norm**2)
-    cp, cn, cm = p/s, n/s, m/s
-    with np.errstate(divide='ignore'):
-        zeta = 1-((mu2/(rho*(cn/(1-cm)+mu2)))**2+cn*(cp/(1-cm)+mu2)/(1-cm))/(mu2*(cn/(1-cm)+mu2))
-    zetap = np.maximum(zeta, 0)
-    return stats.norm.cdf(np.sqrt(zetap/(1-zetap)))
+def unfolding_clustering(X):
+    X2 = unfold(X, 1)
+    return eigsh(X2@X2.T, k=1)[1][:, 0]
 
 def tensor_accuracy(p, n, m, mu_norm, h_norm):
     s = p+n+m
@@ -107,3 +99,22 @@ def tensor_accuracy(p, n, m, mu_norm, h_norm):
             alpha = align(c, beta_T, beta_M)[1][1]
             acc[i, j] = stats.norm.cdf(alpha/np.sqrt(1-alpha**2))
     return acc
+
+def unfolding_accuracy(p, n, m, mu_norm, h_norm):
+    s = p+n+m
+    cp, cn, cm = p/s, n/s, m/s
+    rho, mu2 = np.meshgrid(h_norm**2*s/np.sqrt(p*n*m), mu_norm**2)
+    with np.errstate(divide='ignore'):
+        zeta = 1-((mu2/(rho*(cn/(1-cm)+mu2)))**2+cn*(cp/(1-cm)+mu2)/(1-cm))/(mu2*(cn/(1-cm)+mu2))
+    zetap = np.maximum(zeta, 0)
+    return stats.norm.cdf(np.sqrt(zetap/(1-zetap)))
+
+def weighted_mean_accuracy(p, n, m, mu_norm, h_norm):
+    s = p+n+m
+    cp, cn, cm = p/s, n/s, m/s
+    h2, mu2 = np.meshgrid(h_norm**2, mu_norm**2)
+    sigma2 = h2+(p+n)/s
+    r = mu2*h2/sigma2
+    zeta = 1-(1/r)*(cn/(1-cm))*(r+cp/(1-cm))/(r+cn/(1-cm))
+    zetap = np.maximum(zeta, 0)
+    return stats.norm.cdf(np.sqrt(zetap/(1-zetap)))
