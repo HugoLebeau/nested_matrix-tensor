@@ -115,6 +115,7 @@ def weighted_mean_accuracy(p, n, m, mu_norm, h_norm):
     h2, mu2 = np.meshgrid(h_norm**2, mu_norm**2)
     sigma2 = h2+(p+n)/s
     r = mu2*h2/sigma2
-    zeta = 1-(1/r)*(cn/(1-cm))*(r+cp/(1-cm))/(r+cn/(1-cm))
+    with np.errstate(divide='ignore'):
+        zeta = 1-(1/r)*(cn/(1-cm))*(r+cp/(1-cm))/(r+cn/(1-cm))
     zetap = np.maximum(zeta, 0)
     return stats.norm.cdf(np.sqrt(zetap/(1-zetap)))
